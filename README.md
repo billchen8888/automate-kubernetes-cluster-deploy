@@ -26,25 +26,25 @@ the prequisite is:
 
 we need to give values in USERDATA
 
-in the USERDATA,   we can set the input like the following
-# EXAMPLE 1: (MASTER and WORKER are on exactly same machines)
-MASTER_IPS=(10.10.1.1 10.10.1.2 10.10.1.3)
-MASTER_HOSTS=(host1 host2 host3)
+in the USERDATA,   we put the MASTER and WORKER nfo input like the following. Please note, we can put any number of machiens for MASTER or WORKER. 
+# EXAMPLE 1: (MASTER and WORKER are on exactly same machines) 
+MASTER_IPS=(10.10.1.1 10.10.1.2 10.10.1.3) </br>
+MASTER_HOSTS=(host1 host2 host3)   </br>
 
-WORKER_IPS=(10.10.1.1 10.10.1.2 10.10.1.3)
+WORKER_IPS=(10.10.1.1 10.10.1.2 10.10.1.3) </br>
 WORKER_HOSTS=(host11 host2 host3)
 
 -------------------------------
 
 # EXAMPLE 2:  (MASTER and WORKER are completely seperated)
-MASTER_IPS=(10.10.1.1 10.10.1.2 10.10.1.3)
-MASTER_HOSTS=(host1 host2 host3)
+MASTER_IPS=(10.10.1.1 10.10.1.2 10.10.1.3) </br>
+MASTER_HOSTS=(host1 host2 host3)  </br>
 
-WORKER_IPS=(10.10.1.4 10.10.1.5 10.10.1.6)
+WORKER_IPS=(10.10.1.4 10.10.1.5 10.10.1.6) </br>
 WORKER_HOSTS=(host4 host5 host6)
 
 # KNOWN issue
 When the MASTER and WORKER are on different nodes, I run into some issue on step 06-04. the script hangs on step 06-4 for csr to be ready. I need some help to troubleshoot the kubernetes issue. If you would liek to contribute, please email me bill_j_chen@yahoo.com
 
 # features to add
-move the etcd out of master. But I cannot promise yet...not sure when I can get some time to work on this:-)
+We might want to give flexibility that the etcd run on this own set of machines - not neccesarrily on the master. But I cannot make promise yet...not sure when I can get some time to work on this:-)
