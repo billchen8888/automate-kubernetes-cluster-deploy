@@ -1,8 +1,6 @@
 # kubernetes cluster stack deplyment automation (on Centos 7)
 
-I try to write a wrapper script to automate the steps listed in https://github.com/opsnull/follow-me-install-kubernetes-cluster. So far I am at the step 08-2, but I run into some issues. In the author's tutorial, the master and worker nodes are on the same machines, and my scripts try to cover the scenarios that the master and worker nodes are on different machines. But if we set the same IPs and hosts for MASTER and Worker, the script will handle that too.
-
-Now I run into some issue on step 06-04...If the master and worker are on different machines, the script hangs on step 06-4 for csr to be ready. The scrupt does work when we set the master and worker on the same machines. I need some help to troubleshoot the kubernetes issue. If you can help, please email me bill_j_chen@yahoo.com
+I wrote this wrapper script to automate the steps listed in https://github.com/opsnull/follow-me-install-kubernetes-cluster. In the author's tutorial, the master and worker nodes are on the same machines, In the script I try to cover the scenario that the master and worker nodes are on different machines.
 
 How to use this package
 
@@ -44,3 +42,6 @@ MASTER_HOSTS=(host1 host2 host3)
 
 WORKER_IPS=(10.10.1.4 10.10.1.5 10.10.1.6)
 WORKER_HOSTS=(host4 host5 host6)
+
+## KNOW issue
+When the MASTER and WORKER are on different nodes, I run into some issue on step 06-04. the script hangs on step 06-4 for csr to be ready. I need some help to troubleshoot the kubernetes issue. If you would liek to contribute, please email me bill_j_chen@yahoo.com
