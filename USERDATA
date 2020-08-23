@@ -1,0 +1,8 @@
+
+###### CHANGE TO YOUR IP and HOST ###############
+
+MASTER_IPS=(10.10.1.1 10.10.1.2 10.10.1.3)
+MASTER_HOSTS=(host1 host2 host3)
+
+WORKER_IPS=(10.10.1.4 10.10.1.5 10.10.1.6)
+WORKER_HOSTS=(host4 host5 host6)
