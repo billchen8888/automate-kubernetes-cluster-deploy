@@ -9,10 +9,15 @@ cd kube-prometheus/
 kubectl apply -f manifests/setup # 安装 prometheus-operator
 kubectl apply -f manifests/ # 安装 promethes metric adapter
 
+echo waiting 30 seconds for pods to be ready
+sleep 30
 kubectl get pods -n monitoring
 kubectl top pods -n monitoring
 
 # port-forwarding to a single pod??
 pod1st=`kubectl get pods -n monitoring |grep prometheus-k8s|head -1|awk '{print $1}'`
-kubectl port-forward --address 0.0.0.0 pod/$pod1st -n monitoring 9090:9090
-kubectl port-forward --address 0.0.0.0 svc/grafana -n monitoring 3000:3000 
+
+# shall we put the next two command in background? As they stay in foreground.
+# Shall we create service?
+kubectl port-forward --address 0.0.0.0 pod/$pod1st -n monitoring 9090:9090 &
+kubectl port-forward --address 0.0.0.0 svc/grafana -n monitoring 3000:3000 &

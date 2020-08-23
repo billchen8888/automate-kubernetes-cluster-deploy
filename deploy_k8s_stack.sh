@@ -48,3 +48,5 @@ cd scripts
 ./08-03.sh 2>&1 | tee /tmp/08-03.log
 
 ./08-04.sh 2>&1 | tee /tmp/08-04.log
+
+./08-05.sh 2>&1 | tee /tmp/08-05.log
