@@ -43,5 +43,8 @@ MASTER_HOSTS=(host1 host2 host3)
 WORKER_IPS=(10.10.1.4 10.10.1.5 10.10.1.6)
 WORKER_HOSTS=(host4 host5 host6)
 
-## KNOW issue
+# KNOWN issue
 When the MASTER and WORKER are on different nodes, I run into some issue on step 06-04. the script hangs on step 06-4 for csr to be ready. I need some help to troubleshoot the kubernetes issue. If you would liek to contribute, please email me bill_j_chen@yahoo.com
+
+# features to add
+move the etcd out of master. But I cannot promise yet...not sure when I can get some time to work on this:-)
