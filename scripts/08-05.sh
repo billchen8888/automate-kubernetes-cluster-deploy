@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export PATH=$PATH:/opt/k8s/bin
+
 cd /opt/k8s/work/kubernetes/
 tar -xzvf kubernetes-src.tar.gz
 

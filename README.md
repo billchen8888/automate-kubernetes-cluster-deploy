@@ -43,8 +43,5 @@ MASTER_HOSTS=(host1 host2 host3)  </br>
 WORKER_IPS=(10.10.1.4 10.10.1.5 10.10.1.6) </br>
 WORKER_HOSTS=(host4 host5 host6)
 
-# KNOWN issue
-When the MASTER and WORKER are on different nodes, I run into some issue on step 06-04. the script hangs on step 06-4 for csr to be ready. I need some help to troubleshoot the kubernetes issue. If you would liek to contribute, please email me bill_j_chen@yahoo.com
-
 # features to add
-We might want to give flexibility that the etcd can run on its own set of machines - not necessarily on the master. Ay this momeny I cannot make promise yet...not sure when I can get some time to work on this:-)
+We might want to give flexibility that the etcd can run on its own set of machines - not necessarily on the master. At this momeny I cannot make promise yet...not sure when I can get some time to work on this:-)

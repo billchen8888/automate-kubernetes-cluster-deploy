@@ -15,20 +15,14 @@ yum install -y gcc make
 cd /opt/k8s/work/nginx-1.15.3
 make && make install
 
+######BC the ngix proxy should be on worker side ======
 cd /opt/k8s/work
-for master_ip in ${MASTER_IPS[@]}
+for worker_ip in ${WORKER_IPS[@]}
   do
-    echo ">>> ${master_ip}"
-    ssh root@${master_ip} "mkdir -p /opt/k8s/kube-nginx/{conf,logs,sbin}"
-  done
-
-cd /opt/k8s/work
-for master_ip in ${MASTER_IPS[@]}
-  do
-    echo ">>> ${master_ip}"
-    ssh root@${master_ip} "mkdir -p /opt/k8s/kube-nginx/{conf,logs,sbin}"
-    scp /opt/k8s/work/nginx-1.15.3/nginx-prefix/sbin/nginx  root@${master_ip}:/opt/k8s/kube-nginx/sbin/kube-nginx
-    ssh root@${master_ip} "chmod a+x /opt/k8s/kube-nginx/sbin/*"
+    echo ">>> ${worker_ip}"
+    ssh root@${worker_ip} "mkdir -p /opt/k8s/kube-nginx/{conf,logs,sbin}"
+    scp /opt/k8s/work/nginx-1.15.3/nginx-prefix/sbin/nginx  root@${worker_ip}:/opt/k8s/kube-nginx/sbin/kube-nginx
+    ssh root@${worker_ip} "chmod a+x /opt/k8s/kube-nginx/sbin/*"
   done
 
 cd /opt/k8s/work
@@ -54,10 +48,10 @@ stream {
 EOF
 
 cd /opt/k8s/work
-for master_ip in ${MASTER_IPS[@]}
+for worker_ip in ${WORKER_IPS[@]}
   do
-    echo ">>> ${master_ip}"
-    scp kube-nginx.conf  root@${master_ip}:/opt/k8s/kube-nginx/conf/kube-nginx.conf
+    echo ">>> ${worker_ip}"
+    scp kube-nginx.conf  root@${worker_ip}:/opt/k8s/kube-nginx/conf/kube-nginx.conf
   done
 
 cd /opt/k8s/work
@@ -84,17 +78,17 @@ WantedBy=multi-user.target
 EOF
 
 cd /opt/k8s/work
-for master_ip in ${MASTER_IPS[@]}
+for worker_ip in ${WORKER_IPS[@]}
   do
     echo ">>> ${master_ip}"
-    scp kube-nginx.service  root@${master_ip}:/etc/systemd/system/
+    scp kube-nginx.service  root@${worker_ip}:/etc/systemd/system/
   done
 
 cd /opt/k8s/work
-for master_ip in ${MASTER_IPS[@]}
+for worker_ip in ${WORKER_IPS[@]}
   do
-    echo ">>> ${master_ip}"
-    ssh root@${master_ip} "systemctl daemon-reload && systemctl enable kube-nginx && systemctl restart kube-nginx"
+    echo ">>> ${worker_ip}"
+    ssh root@${worker_ip} "systemctl daemon-reload && systemctl enable kube-nginx && systemctl restart kube-nginx"
   done
 
 

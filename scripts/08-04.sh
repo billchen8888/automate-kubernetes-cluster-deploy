@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export PATH=$PATH:/opt/k8s/bin
+
 cd /opt/k8s/work
 git clone https://github.com/coreos/kube-prometheus.git
 cd kube-prometheus/
