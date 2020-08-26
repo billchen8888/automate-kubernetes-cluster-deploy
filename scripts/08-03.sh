@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "=== getting into step 08-03.sh =="
+source ../USERDATA
 source /opt/k8s/bin/environment.sh
 
 cd /opt/k8s/work
@@ -10,7 +12,11 @@ kubectl apply -f  dashboard-recommended.yaml
 
 kubectl get pods -n kubernetes-dashboard 
 
-kubectl port-forward -n kubernetes-dashboard  svc/kubernetes-dashboard 4443:443 --address 0.0.0.0
+echo "==== waiting 20 seconds for the pods to be ready"
+sleep 20
+ssh ${WORKER_HOSTS[0]} "kubectl port-forward -n kubernetes-dashboard  svc/kubernetes-dashboard 4443:443 --address 0.0.0.0" &
+# this port-forward also works on the box out of the k8s cluster - as long as kubectl config is right.
+# do we need to put in background mode?
 
 kubectl create sa dashboard-admin -n kube-system
 kubectl create clusterrolebinding dashboard-admin --clusterrole=cluster-admin --serviceaccount=kube-system:dashboard-admin
@@ -38,3 +44,6 @@ kubectl config set-context default \
 
 # 设置默认上下文
 kubectl config use-context default --kubeconfig=dashboard.kubeconfig
+
+sleep 4  # to see whether the kubectl port-forward still becomes the last line in log file??
+echo "=== reached the last line in step 08-03.sh ==="

@@ -43,10 +43,12 @@ cd scripts
 
 # there is no 08-01 as it was a description
 
-./08-02.sh 2>&1 | tee /tmp/08-02.log
+./08-02.sh 2>&1 | tee /tmp/08-02.log &
+# tee holds the session even though I put the kubectl port-forward command in background
+# I don't think there is dependency among the 08-03,08-04,08-05, so it should be ok
 
-./08-03.sh 2>&1 | tee /tmp/08-03.log
+./08-03.sh 2>&1 | tee /tmp/08-03.log &
 
-./08-04.sh 2>&1 | tee /tmp/08-04.log
+./08-04.sh 2>&1 | tee /tmp/08-04.log &
 
-./08-05.sh 2>&1 | tee /tmp/08-05.log
+./08-05.sh 2>&1 | tee /tmp/08-05.log &
