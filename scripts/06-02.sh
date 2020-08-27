@@ -15,15 +15,25 @@ yum install -y gcc make
 cd /opt/k8s/work/nginx-1.15.3
 make && make install
 
-######BC the ngix proxy should be on worker side ======
+######BC the ngix proxy s mainly on worker sidem, but if we want to show master on kubectl get nodes command ======
 cd /opt/k8s/work
-for worker_ip in ${WORKER_IPS[@]}
+if [ $MASTER_WORKER_SEPERATED = true ] &&  [ "$SHOW_MASTER" = "true" ]; then
+  for machine_ip in ${!iphostmap[@]}
   do
-    echo ">>> ${worker_ip}"
+    echo ">>> ${machine_ip} scp nginx binary"
+    ssh root@${machine_ip} "mkdir -p /opt/k8s/kube-nginx/{conf,logs,sbin}"
+    scp /opt/k8s/work/nginx-1.15.3/nginx-prefix/sbin/nginx  root@${machine_ip}:/opt/k8s/kube-nginx/sbin/kube-nginx
+    ssh root@${machine_ip} "chmod a+x /opt/k8s/kube-nginx/sbin/*"
+  done
+else
+  for worker_ip in ${WORKER_IPS[@]}
+  do
+    echo ">>> ${worker_ip} scp nginx binary"
     ssh root@${worker_ip} "mkdir -p /opt/k8s/kube-nginx/{conf,logs,sbin}"
     scp /opt/k8s/work/nginx-1.15.3/nginx-prefix/sbin/nginx  root@${worker_ip}:/opt/k8s/kube-nginx/sbin/kube-nginx
     ssh root@${worker_ip} "chmod a+x /opt/k8s/kube-nginx/sbin/*"
   done
+fi
 
 cd /opt/k8s/work
 cat > kube-nginx.conf << EOF
@@ -48,11 +58,19 @@ stream {
 EOF
 
 cd /opt/k8s/work
-for worker_ip in ${WORKER_IPS[@]}
+if [ $MASTER_WORKER_SEPERATED = true ] &&  [ "$SHOW_MASTER" = "true" ]; then
+  for machine_ip in ${!iphostmap[@]}
   do
-    echo ">>> ${worker_ip}"
+    echo ">>> ${machine_ip} scp nginx.conf"
+    scp kube-nginx.conf  root@${machine_ip}:/opt/k8s/kube-nginx/conf/kube-nginx.conf
+  done
+else
+  for worker_ip in ${WORKER_IPS[@]}
+  do
+    echo ">>> ${worker_ip} scp nginx.conf"
     scp kube-nginx.conf  root@${worker_ip}:/opt/k8s/kube-nginx/conf/kube-nginx.conf
   done
+fi
 
 cd /opt/k8s/work
 cat > kube-nginx.service <<EOF
@@ -78,17 +96,31 @@ WantedBy=multi-user.target
 EOF
 
 cd /opt/k8s/work
-for worker_ip in ${WORKER_IPS[@]}
+if [ $MASTER_WORKER_SEPERATED = true ] &&  [ "$SHOW_MASTER" = "true" ]; then
+  for machine_ip in ${!iphostmap[@]}
   do
-    echo ">>> ${master_ip}"
+    echo ">>> ${machine_ip} scp kube-nginx.service"
+    scp kube-nginx.service  root@${machine_ip}:/etc/systemd/system/
+  done
+else
+  for worker_ip in ${WORKER_IPS[@]}
+  do
+    echo ">>> ${worker_ip} scp kube-nginx.service"
     scp kube-nginx.service  root@${worker_ip}:/etc/systemd/system/
   done
+fi
 
 cd /opt/k8s/work
-for worker_ip in ${WORKER_IPS[@]}
+if [ $MASTER_WORKER_SEPERATED = true ] &&  [ "$SHOW_MASTER" = "true" ]; then
+  for machine_ip in ${!iphostmap[@]}
   do
-    echo ">>> ${worker_ip}"
+    echo ">>> ${machine_ip} start nginx"
+    ssh root@${machine_ip} "systemctl daemon-reload && systemctl enable kube-nginx && systemctl restart kube-nginx"
+  done
+else
+  for worker_ip in ${WORKER_IPS[@]}
+  do
+    echo ">>> ${worker_ip} start nginx"
     ssh root@${worker_ip} "systemctl daemon-reload && systemctl enable kube-nginx && systemctl restart kube-nginx"
   done
-
-
+fi

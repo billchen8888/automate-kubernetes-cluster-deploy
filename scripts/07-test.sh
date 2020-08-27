@@ -50,10 +50,20 @@ EOF
 
 kubectl create -f /opt/k8s/work/nginx-ds.yml
 
-echo sleep 30 seconds to let the reources to be ready
-sleep 30
+echo sleep 10 seconds to let the reources to be ready
+sleep 10
 
-podips=`kubectl get pods  -o wide -l app=nginx-ds |grep -v NAME |awk '{print $6}'`
+while [ true ]
+do
+  podips=`kubectl get pods  -o wide -l app=nginx-ds |grep -v NAME |awk '{print $6}' |grep -v none`
+  # I notice some entries have IPcolume <none>. WhY? is it because I enabled the kubelet and containerd on master??
+  if [ "$podips" = "" ]; then
+    echo "pod not ready yet, sleep 10 seconds ..."
+  else
+    break
+  fi
+done
+
 for worker_ip in ${WORKER_IPS[@]}
   do
     echo ">>> ${worker_ip}"

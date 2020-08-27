@@ -1,12 +1,45 @@
 #!/bin/bash
 
-# kubelet is for worker nodes
+# kubelet is mainly for worker nodes, but we can run kubelet on master hosts
 source ../USERDATA
 source /opt/k8s/work/iphostinfo
 source /opt/k8s/bin/environment.sh
 
 cd /opt/k8s/work
-for worker_name in ${WORKER_HOSTS[@]}
+if [ $MASTER_WORKER_SEPERATED = true ] &&  [ "$SHOW_MASTER" = "true" ]; then
+  for host in ${iphostmap[@]}
+  do
+    echo ">>> ${host} - createing kubelet-related paramters and file"
+
+    # 创建 token
+    export BOOTSTRAP_TOKEN=$(kubeadm token create \
+      --description kubelet-bootstrap-token \
+      --groups system:bootstrappers:${host} \
+      --kubeconfig ~/.kube/config)
+
+    # 设置集群参数
+    kubectl config set-cluster kubernetes \
+      --certificate-authority=/etc/kubernetes/cert/ca.pem \
+      --embed-certs=true \
+      --server=${KUBE_APISERVER} \
+      --kubeconfig=kubelet-bootstrap-${host}.kubeconfig
+
+    # 设置客户端认证参数
+    kubectl config set-credentials kubelet-bootstrap \
+      --token=${BOOTSTRAP_TOKEN} \
+      --kubeconfig=kubelet-bootstrap-${host}.kubeconfig
+
+    # 设置上下文参数
+    kubectl config set-context default \
+      --cluster=kubernetes \
+      --user=kubelet-bootstrap \
+      --kubeconfig=kubelet-bootstrap-${host}.kubeconfig
+
+    # 设置默认上下文
+    kubectl config use-context default --kubeconfig=kubelet-bootstrap-${host}.kubeconfig
+  done
+else
+  for worker_name in ${WORKER_HOSTS[@]}
   do
     echo ">>> ${worker_name} - createing kubelet-related paramters and file"
 
@@ -37,19 +70,28 @@ for worker_name in ${WORKER_HOSTS[@]}
     # 设置默认上下文
     kubectl config use-context default --kubeconfig=kubelet-bootstrap-${worker_name}.kubeconfig
   done
+fi
 
 cd /opt/k8s/work
-for worker_name in ${WORKER_HOSTS[@]}
+if [ $MASTER_WORKER_SEPERATED = true ] &&  [ "$SHOW_MASTER" = "true" ]; then
+  for host in ${iphostmap[@]}
+  do
+    echo ">>> ${host} - scp kubelet-bootstrap.kubeconfig"
+    scp kubelet-bootstrap-${host}.kubeconfig root@${host}:/etc/kubernetes/kubelet-bootstrap.kubeconfig
+  done
+else
+  for worker_name in ${WORKER_HOSTS[@]}
   do
     echo ">>> ${worker_name} - scp kubelet-bootstrap.kubeconfig"
     scp kubelet-bootstrap-${worker_name}.kubeconfig root@${worker_name}:/etc/kubernetes/kubelet-bootstrap.kubeconfig
   done
+fi
 
 cd /opt/k8s/work
 cat > kubelet-config.yaml.template <<EOF
 kind: KubeletConfiguration
 apiVersion: kubelet.config.k8s.io/v1beta1
-address: "##WORKER_IP##"
+address: "##MACHINE_IP##"
 staticPodPath: ""
 syncFrequency: 1m
 fileCheckFrequency: 20s
@@ -75,7 +117,7 @@ eventBurst: 20
 enableDebuggingHandlers: true
 enableContentionProfiling: true
 healthzPort: 10248
-healthzBindAddress: "##WORKER_IP##"
+healthzBindAddress: "##MACHINE_IP##"
 clusterDomain: "${CLUSTER_DNS_DOMAIN}"
 clusterDNS:
   - "${CLUSTER_DNS_SVC_IP}"
@@ -118,12 +160,21 @@ enforceNodeAllocatable: ["pods"]
 EOF
 
 cd /opt/k8s/work
-for worker_ip in ${WORKER_IPS[@]}
+if [ $MASTER_WORKER_SEPERATED = true ] &&  [ "$SHOW_MASTER" = "true" ]; then
+  for machine_ip in ${!iphostmap[@]}
+  do
+    echo ">>> ${machine_ip} - scp kubelet-config.yaml"
+    sed -e "s/##MACHINE_IP##/${machine_ip}/" kubelet-config.yaml.template > kubelet-config-${machine_ip}.yaml.template
+    scp kubelet-config-${machine_ip}.yaml.template root@${machine_ip}:/etc/kubernetes/kubelet-config.yaml
+  done
+else
+  for worker_ip in ${WORKER_IPS[@]}
   do 
     echo ">>> ${worker_ip} - scp kubelet-config.yaml"
-    sed -e "s/##WORKER_IP##/${worker_ip}/" kubelet-config.yaml.template > kubelet-config-${worker_ip}.yaml.template
+    sed -e "s/##MACHINE_IP##/${worker_ip}/" kubelet-config.yaml.template > kubelet-config-${worker_ip}.yaml.template
     scp kubelet-config-${worker_ip}.yaml.template root@${worker_ip}:/etc/kubernetes/kubelet-config.yaml
   done
+fi
 
 cd /opt/k8s/work
 cat > kubelet.service.template <<EOF
@@ -145,7 +196,7 @@ ExecStart=/opt/k8s/bin/kubelet \\
   --root-dir=${K8S_DIR}/kubelet \\
   --kubeconfig=/etc/kubernetes/kubelet.kubeconfig \\
   --config=/etc/kubernetes/kubelet-config.yaml \\
-  --hostname-override=##WORKER_NAME## \\
+  --hostname-override=##MACHINE_NAME## \\
   --image-pull-progress-deadline=15m \\
   --volume-plugin-dir=${K8S_DIR}/kubelet/kubelet-plugins/volume/exec/ \\
   --logtostderr=true \\
@@ -159,12 +210,21 @@ WantedBy=multi-user.target
 EOF
 
 cd /opt/k8s/work
-for worker_name in ${WORKER_HOSTS[@]}
+if [ $MASTER_WORKER_SEPERATED = true ] &&  [ "$SHOW_MASTER" = "true" ]; then
+  for machine_name in ${iphostmap[@]}
+  do
+    echo ">>> ${machine_name} - scp kubelet.service"
+    sed -e "s/##MACHINE_NAME##/${machine_name}/" kubelet.service.template > kubelet-${machine_name}.service
+    scp kubelet-${machine_name}.service root@${machine_name}:/etc/systemd/system/kubelet.service
+  done
+else
+  for worker_name in ${WORKER_HOSTS[@]}
   do 
     echo ">>> ${worker_name} - scp kubelet.service"
-    sed -e "s/##WORKER_NAME##/${worker_name}/" kubelet.service.template > kubelet-${worker_name}.service
+    sed -e "s/##MACHINE_NAME##/${worker_name}/" kubelet.service.template > kubelet-${worker_name}.service
     scp kubelet-${worker_name}.service root@${worker_name}:/etc/systemd/system/kubelet.service
   done
+fi
 
 echo "creating  clusterrolebinding kube-apiserver:kubelet-apis"
 kubectl create clusterrolebinding kube-apiserver:kubelet-apis --clusterrole=system:kubelet-api-admin --user kubernetes-master
@@ -230,23 +290,39 @@ EOF
 echo "applying csr-crb.yaml"
 kubectl apply -f csr-crb.yaml
 
-for worker_ip in ${WORKER_IPS[@]}
+if [ $MASTER_WORKER_SEPERATED = true ] &&  [ "$SHOW_MASTER" = "true" ]; then
+  for machine_ip in ${!iphostmap[@]}
+  do
+    echo ">>> ${machine_ip} - starting kubelet service"
+    ssh root@${machine_ip} "mkdir -p ${K8S_DIR}/kubelet/kubelet-plugins/volume/exec/"
+    ssh root@${machine_ip} "/usr/sbin/swapoff -a"
+    ssh root@${machine_ip} "systemctl daemon-reload && systemctl enable kubelet && systemctl restart kubelet"
+  done
+else
+  for worker_ip in ${WORKER_IPS[@]}
   do
     echo ">>> ${worker_ip} - starting kubelet service"
     ssh root@${worker_ip} "mkdir -p ${K8S_DIR}/kubelet/kubelet-plugins/volume/exec/"
     ssh root@${worker_ip} "/usr/sbin/swapoff -a"
     ssh root@${worker_ip} "systemctl daemon-reload && systemctl enable kubelet && systemctl restart kubelet"
   done
+fi
 
 
 # manually approve kubelet server request 
 # do we need to wait till the CSR is ready ??
 sleep 10
 
+if [ $MASTER_WORKER_SEPERATED = true ] &&  [ "$SHOW_MASTER" = "true" ]; then
+    CSRNO=${#iphostmap[@]}
+else
+    CSRNO=${#WORKER_IPS[@]}
+fi
+
 while [ true ]
 do
     pendingcsrs=`kubectl get csr | grep Pending | awk '{print $1}'|wc -l`
-    if [ $pendingcsrs -lt ${#WORKER_IPS[@]} ]; then
+    if [ $pendingcsrs -lt $CSRNO ]; then
         echo "the csr(s) are not created yet... wait 10 seconds"
         sleep 10
     else
@@ -264,6 +340,13 @@ kubectl create clusterrolebinding kubelet-api-test --clusterrole=system:kubelet-
 SECRET=$(kubectl get secrets | grep kubelet-api-test | awk '{print $1}')
 TOKEN=$(kubectl describe secret ${SECRET} | grep -E '^token' | awk '{print $2}')
 echo ${TOKEN}
+
+# add by BC ##
+# at this point, all the nodes shown "NotReady" in kubectl get nodes-A
+# but we can label the nodes
+if [ $MASTER_WORKER_SEPERATED = true ]; then
+  kubectl label nodes ${MASTER_HOSTS[@] kubernetes.io/role=master
+fi
 
 # test & check
 #curl -s --cacert /etc/kubernetes/cert/ca.pem -H "Authorization: Bearer ${TOKEN}" https://172.27.138.251:10250/metrics | head
