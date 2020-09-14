@@ -60,6 +60,15 @@ for worker_name in ${WORKER_HOSTS[@]}
     scp kube-proxy.kubeconfig root@${worker_name}:/etc/kubernetes/
   done
 
+# looks like we need kube-proxy running on master too
+if [ $MASTER_WORKER_SEPERATED = true ]; then
+for master_name in ${MASTER_HOSTS[@]}
+  do
+    echo ">>> ${master_name}"
+    scp kube-proxy.kubeconfig root@${master_name}:/etc/kubernetes/
+  done
+fi
+
 cd /opt/k8s/work
 cat > kube-proxy-config.yaml.template <<EOF
 kind: KubeProxyConfiguration
@@ -93,6 +102,17 @@ for (( i=0; i < ${#WORKER_IPS[@]}; i++ ))
     scp kube-proxy-config-${WORKER_HOSTS[$i]}.yaml.template root@${WORKER_HOSTS[$i]}:/etc/kubernetes/kube-proxy-config.yaml
   done
 
+# added 2020-09-03: looks like we also need kube-proxy running on masters for calico-pods to work on master.
+# in order to test the feature, I still use logic to seperate them, in case we need to tuen of kube-proxy on master
+if [ $MASTER_WORKER_SEPERATED = true ]; then
+  for (( i=0; i < ${#MASTER_IPS[@]}; i++ ))
+  do
+    echo ">>> ${MASTER_IPS[$i]} - scp kube-proxy-config to master too..."
+    sed -e "s/##WORKER_NAME##/${MASTER_HOSTS[$i]}/" -e "s/##WORKER_IP##/${MASTER_IPS[$i]}/" kube-proxy-config.yaml.template > kube-proxy-config-${MASTER_HOSTS[$i]}.yaml.template
+    scp kube-proxy-config-${MASTER_HOSTS[$i]}.yaml.template root@${MASTER_HOSTS[$i]}:/etc/kubernetes/kube-proxy-config.yaml
+  done
+fi
+
 cd /opt/k8s/work
 cat > kube-proxy.service <<EOF
 [Unit]
@@ -121,6 +141,15 @@ for worker_name in ${WORKER_HOSTS[@]}
     scp kube-proxy.service root@${worker_name}:/etc/systemd/system/
   done
 
+# looks like we need the kube-proxy server
+if [ $MASTER_WORKER_SEPERATED = true ]; then
+  for master_name in ${MASTER_HOSTS[@]}
+  do
+    echo ">>> ${master_name}"
+    scp kube-proxy.service root@${master_name}:/etc/systemd/system/
+  done
+fi
+
 cd /opt/k8s/work
 for worker_ip in ${WORKER_IPS[@]}
   do
@@ -129,3 +158,14 @@ for worker_ip in ${WORKER_IPS[@]}
     ssh root@${worker_ip} "modprobe ip_vs_rr"
     ssh root@${worker_ip} "systemctl daemon-reload && systemctl enable kube-proxy && systemctl restart kube-proxy"
   done
+
+# looks like we need kube-proxy to be running
+if [ $MASTER_WORKER_SEPERATED = true ]; then
+for master_ip in ${MASTER_IPS[@]}
+  do
+    echo ">>> ${master_ip}  starting kube-proxy on master too..."
+    ssh root@${master_ip} "mkdir -p ${K8S_DIR}/kube-proxy"
+    ssh root@${master_ip} "modprobe ip_vs_rr"
+    ssh root@${master_ip} "systemctl daemon-reload && systemctl enable kube-proxy && systemctl restart kube-proxy"
+  done
+fi

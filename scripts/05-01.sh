@@ -12,7 +12,7 @@ cd kubernetes
 tar -xzvf  kubernetes-src.tar.gz
 
 cd /opt/k8s/work
-# if the master and nodes are different, then we don't need to cp controller, apiserve etc
+# if the master and nodes are different, then we don't need to cp controller, apiserve to worker hosts
 for master_ip in ${MASTER_IPS[@]}
   do
     echo ">>> ${master_ip}"

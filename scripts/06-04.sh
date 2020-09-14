@@ -345,7 +345,9 @@ echo ${TOKEN}
 # at this point, all the nodes shown "NotReady" in kubectl get nodes-A
 # but we can label the nodes
 if [ $MASTER_WORKER_SEPERATED = true ]; then
-  kubectl label nodes ${MASTER_HOSTS[@] kubernetes.io/role=master
+  #kubectl label nodes ${MASTER_HOSTS[@]} kubernetes.io/role=master
+  kubectl label nodes ${MASTER_HOSTS[@]} node-role.kubernetes.io/master=
+  kubectl taint nodes ${MASTER_HOSTS[@]} node-role.kubernetes.io/master=:NoSchedule
 fi
 
 # test & check
