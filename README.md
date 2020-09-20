@@ -1,6 +1,6 @@
 # kubernetes cluster stack deplyment automation (on Centos 7)
 
-I wrote this wrapper script to automate the steps listed in https://github.com/opsnull/follow-me-install-kubernetes-cluster. In the author's tutorial, the master and worker nodes are on the same machines. In my deplumemt script I try to cover the scenario that the master and worker nodes are on different machines.
+I wrote this wrapper script to automate the steps listed in https://github.com/opsnull/follow-me-install-kubernetes-cluster. In the author's tutorial, the master and worker nodes are on the same machines. This deploymemt script covers the scenario that the master and worker nodes are on different machines.
 
 How to use this package
 
