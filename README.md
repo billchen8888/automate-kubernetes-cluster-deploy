@@ -11,8 +11,8 @@ How to use this package
 
 this script is tested on centos 7 on AWS with standrad centos 7 AMI.
 
-we run the script on one box which is not a member of the k8s cluster member
-if we want to run on a box which is a member of k8s cluster, then we need to COMMENT OUT the "init 6" in the 01.sh
+we run the script on one control box which is not a member of the k8s cluster member.
+If we want to run on a box which is a member of k8s cluster, then we need to COMMENT OUT the "init 6" in the 01.sh
 and then manually reboot the nodes.  The reason is that 01.sh will reboot all the k8s nodes after the kernel update.  When
 the box we run script is a member if the cluster, the reboot will interrupt the script.
 
