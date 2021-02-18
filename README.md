@@ -32,7 +32,7 @@ MASTER_IPS=(10.10.1.1 10.10.1.2 10.10.1.3) </br>
 MASTER_HOSTS=(host1 host2 host3)   </br>
 
 WORKER_IPS=(10.10.1.1 10.10.1.2 10.10.1.3) </br>
-WORKER_HOSTS=(host11 host2 host3)
+WORKER_HOSTS=(host1 host2 host3)
 
 -------------------------------
 
